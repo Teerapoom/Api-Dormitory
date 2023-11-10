@@ -1,0 +1,116 @@
+package main
+
+import (
+	"math/rand"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+)
+
+func main() {
+	dsn := "root:1234@tcp(127.0.0.1:3306)/dormitory?charset=utf8mb4&parseTime=True&loc=Local"
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect database")
+	}
+	// Migrate the schema
+	db.AutoMigrate(&User_Register{})
+	// เชื่อม Data bast
+
+	r := gin.Default()
+	r.Use(cors.Default())
+	r.POST("/registerUser", func(c *gin.Context) {
+		var json Register
+		if err := c.ShouldBindJSON(&json); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		var userExist User_Register
+		db.Where("Email = ?", json.Email).First(&userExist)
+		if userExist.ID > 0 {
+			c.JSON(http.StatusOK, gin.H{"status": "error", "message": "User Exist"})
+			return
+		}
+
+		encryptedPassword, _ := bcrypt.GenerateFromPassword([]byte(json.PassWord), 10) //เข้ารัหส
+		json.DayRegister = time.Now()
+		json.IDUser = GenerateIDUser()
+		User_Register := User_Register{IDUser: json.IDUser, Email: json.Email,
+			PassWord: string(encryptedPassword), FullName: json.FullName,
+			UserRights: json.UserRights, MobileNumber: json.MobileNumber, DayRegister: json.DayRegister}
+		db.Create(&User_Register) //savedata
+		if User_Register.ID > 0 {
+
+			c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "User Create Success", "userId": User_Register.ID})
+		} else {
+			c.JSON(http.StatusOK, gin.H{"status": "error", "message": "User Create Failed"})
+		}
+
+	})
+	r.Run("localhost:8080") // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+}
+
+// json เพราะว่าจะส่งค่าเข้าไปใน api สร้างฟอม
+type Register struct {
+	IDUser       string    `json:"iduser"` //รหัสเเบบสุ่มของ User
+	Email        string    `json:"email" binding:"required"`
+	PassWord     string    `json:"password" binding:"required"`
+	FullName     string    `json:"fullname" binding:"required"`
+	UserRights   string    `json:"userrights" binding:"required"` //สิทธิ์การเข้าถึง
+	MobileNumber string    `json:"mobilenumber" binding:"required"`
+	DayRegister  time.Time `json:"dayregister"`
+}
+
+// ORM
+type User_Register struct {
+	gorm.Model
+	IDUser       string
+	Email        string
+	PassWord     string
+	FullName     string
+	UserRights   string
+	MobileNumber string
+	DayRegister  time.Time
+}
+
+// ฟังก์ชันสร้างรหัสสุ่ม
+// สร้างสตริงแบบสุ่มตัวอักษร
+func GenerateIDUser() string {
+	rand.Seed(time.Now().UnixNano()) //เรื่มสุ่มตัวเลขในเสี่ยววินาทีที่กด
+	// สร้างตัวอักษรแรก (2 ตัว)
+	firstTwoLetters := RandomString(2) // 2 ส่ง len
+	// สร้างตัวเลข (4 ตัว)
+	numbers := RandomNumber(4)
+	return firstTwoLetters + numbers
+}
+
+func RandomString(length int) string {
+	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	seededRand := rand.New(rand.NewSource(time.Now().UnixNano())) //สร้างตัวแปรสุ่ม
+	var result strings.Builder                                    // typr strings.Builder ใช้เก็บข้อความ (string) เช่น a,v,d เพื่อประหยัดตัวแปร
+	for i := 0; i < length; i++ {
+		result.WriteByte(charset[seededRand.Intn(len(charset))]) // WriteByte เลือกจาก seededRand.Intn(len(charset) เลือกสุ่ม  charset
+	}
+	return result.String()
+}
+
+// สร้างตัวเลขแบบสุ่ม
+func RandomNumber(length int) string {
+	const charset = "0123456789"
+	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
+	var result strings.Builder
+	for i := 0; i < length; i++ {
+		result.WriteByte(charset[seededRand.Intn(len(charset))])
+	}
+	return result.String()
+}
+
+// ฟังก์ชันสร้างรหัสสุ่ม
+s
