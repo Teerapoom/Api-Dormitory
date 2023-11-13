@@ -19,13 +19,15 @@ var hmacSampleSecret []byte
 
 // json เพราะว่าจะส่งค่าเข้าไปใน api สร้างฟอม
 type Register struct {
-	IDUser       string    `json:"iduser"` //รหัสเเบบสุ่มของ User
-	Email        string    `json:"email" binding:"required"`
-	PassWord     string    `json:"password" binding:"required"`
-	FullName     string    `json:"fullname" binding:"required"`
-	UserRights   string    `json:"userrights" binding:"required"` //สิทธิ์การเข้าถึง
-	MobileNumber string    `json:"mobilenumber" binding:"required"`
-	DayRegister  time.Time `json:"dayregister"`
+	TenantID         string                  `json:"tenantID"`
+	RegisterID       string                  `json:"registerID"`
+	Email            string                  `json:"email" binding:"required"`
+	PassWord         string                  `json:"password" binding:"required"`
+	FullName         string                  `json:"fullname" binding:"required"`
+	UserRights       string                  `json:"userrights" binding:"required"` //สิทธิ์การเข้าถึง
+	MobileNumber     string                  `json:"mobilenumber" binding:"required"`
+	DayRegister      time.Time               `json:"dayregister"`
+	User_information *model.User_information `json:"User_information"`
 }
 
 type Login struct {
@@ -49,19 +51,50 @@ func PostRegister(c *gin.Context) {
 
 	encryptedPassword, _ := bcrypt.GenerateFromPassword([]byte(json.PassWord), 10) //เข้ารัหส
 	json.DayRegister = time.Now()
-	json.IDUser = GenerateIDUser()
-	User_Register := model.User_Register{IDUser: json.IDUser, Email: json.Email,
-		PassWord: string(encryptedPassword), FullName: json.FullName,
-		UserRights: json.UserRights, MobileNumber: json.MobileNumber, DayRegister: json.DayRegister}
-	database.Db.Create(&User_Register) //savedata
-	if User_Register.ID > 0 {
-		// 201 -> สร้างสำเร็จ
-		c.JSON(http.StatusCreated, gin.H{"status": "ok", "message": "User Create Success", "userId": User_Register.ID})
-	} else {
-		c.JSON(http.StatusOK, gin.H{"status": "error", "message": "User Create Failed"})
+	json.TenantID = GenerateIDUser()
+	json.RegisterID = GenerateIDUser()
+	for json.TenantID == json.RegisterID {
+		json.RegisterID = GenerateIDUser()
 	}
+	// json.RegisterID = GenerateIDUser()
+	userInformation := model.User_information{
+		// UserID:       User_Register.ID,
+		Number_Room:  json.User_information.Number_Room,
+		Deposit:      json.User_information.Deposit,
+		Number_phone: json.User_information.Number_phone,
+		IDCard:       json.User_information.IDCard,
+		Address:      json.User_information.Address,
+		Check_in:     json.User_information.Check_in,
+		Check_out:    json.User_information.Check_out,
+	}
+
+	User_Register := model.User_Register{
+		TenantID:         json.TenantID,
+		RegisterID:       json.RegisterID,
+		Email:            json.Email,
+		PassWord:         string(encryptedPassword),
+		FullName:         json.FullName,
+		UserRights:       json.UserRights,
+		MobileNumber:     json.MobileNumber,
+		DayRegister:      json.DayRegister,
+		User_information: userInformation}
+
+	result := database.Db.Create(&User_Register)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusOK, gin.H{"status": "error", "message": "User Create Failed"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"status": "ok", "message": "User Create Success", "userId": User_Register.ID})
+
 }
 
+// Login
 func PostLogin(c *gin.Context) {
 	var json Login
 	if err := c.ShouldBindJSON(&json); err != nil {

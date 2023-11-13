@@ -9,27 +9,25 @@ import (
 // ORM
 type User_Register struct {
 	gorm.Model
-	IDUser       string
-	Email        string
-	PassWord     string
-	FullName     string
-	UserRights   string
-	MobileNumber string
-	DayRegister  time.Time
+	Email            string
+	PassWord         string
+	FullName         string
+	UserRights       string
+	MobileNumber     string
+	DayRegister      time.Time
+	TenantID         string
+	RegisterID       string
+	User_information User_information `gorm:"foreignKey:UserID"`
 }
 
-// Table user_information {
-// 	id int [PK]
-// 	created_at timestamp
-// 	updated_at timestamp
-// 	deleted_at timestamp
-// 	id_information int
-// 	Numder_Room string
-// 	Deposit string //เงินมัดจำ
-// 	Numder_phone string
-// 	IDCard string // บัตรประชาชน
-// 	Copy_IDCard string // สำเนาบัตรประชาชน
-// 	Address string
-// 	Check_in string
-// 	Check_out string
-//   }
+type User_information struct {
+	gorm.Model
+	UserID       uint
+	Number_Room  string
+	Deposit      float64
+	Number_phone string
+	IDCard       string
+	Address      string
+	Check_in     time.Time
+	Check_out    time.Time
+}
