@@ -19,6 +19,6 @@ func IntnDb() {
 		panic("failed to connect database")
 	}
 	// Migrate the schema
-	db.AutoMigrate(&model.User_Register{})
+	db.AutoMigrate(&model.User_Register{}, &model.User_information{})
 	Db = db
 }
