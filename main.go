@@ -21,6 +21,7 @@ func main() {
 	r := gin.Default()
 	r.Use(cors.Default())
 	r.POST("/registerUser", registercontorller.PostRegister)
+	r.PUT("/updateInfo/:id", registercontorller.UpdateInfo)
 	r.POST("/login", registercontorller.PostLogin)
 	r.GET("/GetAllTest", registercontorller.Get_All_UserRegister)
 	authorized := r.Group("/users", middleware.JWTAuthen()) // มีการเรียนmiddlewareทุกครั้ง

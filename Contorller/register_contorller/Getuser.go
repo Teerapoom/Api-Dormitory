@@ -22,6 +22,7 @@ func Get_All_UserRegister(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "users": user_register})
+
 }
 
 func Profile(c *gin.Context) {

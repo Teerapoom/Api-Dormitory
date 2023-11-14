@@ -31,3 +31,11 @@ type User_information struct {
 	Check_in     time.Time
 	Check_out    time.Time
 }
+
+/*ห้องพัก{
+	เลขห้อง
+	จำนวนคนเข้าพัก
+	หน่วยไฟ
+
+}
+*/

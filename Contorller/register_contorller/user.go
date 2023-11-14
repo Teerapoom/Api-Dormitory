@@ -56,9 +56,10 @@ func PostRegister(c *gin.Context) {
 	for json.TenantID == json.RegisterID {
 		json.RegisterID = GenerateIDUser()
 	}
-	// json.RegisterID = GenerateIDUser()
+
+	json.User_information.Check_in = time.Now()
+	json.User_information.Check_out = json.User_information.Check_in.Add(6 * 30 * 24 * time.Hour) // เดือน * วัน * ชั่วโมง
 	userInformation := model.User_information{
-		// UserID:       User_Register.ID,
 		Number_Room:  json.User_information.Number_Room,
 		Deposit:      json.User_information.Deposit,
 		Number_phone: json.User_information.Number_phone,
@@ -77,7 +78,8 @@ func PostRegister(c *gin.Context) {
 		UserRights:       json.UserRights,
 		MobileNumber:     json.MobileNumber,
 		DayRegister:      json.DayRegister,
-		User_information: userInformation}
+		User_information: userInformation,
+	}
 
 	result := database.Db.Create(&User_Register)
 	if result.Error != nil {
@@ -89,9 +91,30 @@ func PostRegister(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "error", "message": "User Create Failed"})
 		return
 	}
-
 	c.JSON(http.StatusCreated, gin.H{"status": "ok", "message": "User Create Success", "userId": User_Register.ID})
 
+}
+
+func UpdateInfo(c *gin.Context) {
+	var RoomInfo model.User_Register
+	id := c.Param("id")
+	if err := database.Db.First(&RoomInfo, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"message": "Product not found"})
+		return
+	}
+
+	if err := c.ShouldBindJSON(&RoomInfo); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request data"})
+		return
+	}
+
+	if err := database.Db.Save(&RoomInfo).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to update product"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"Status":     "Ok",
+		"UpdateInfo": RoomInfo})
 }
 
 // Login
