@@ -108,10 +108,18 @@ func UpdateInfo(c *gin.Context) {
 		return
 	}
 
+	var userINFO model.User_information
+	database.Db.Where("number_room = ?", userINFO.Number_Room).First(&userINFO)
+	if userINFO.ID > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "NumberRoom Exist"})
+		return
+	}
+
 	if err := database.Db.Save(&RoomInfo).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to update product"})
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"Status":     "Ok",
 		"UpdateInfo": RoomInfo})
