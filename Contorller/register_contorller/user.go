@@ -58,7 +58,7 @@ func PostRegister(c *gin.Context) {
 	}
 
 	json.User_information.Check_in = time.Now()
-	json.User_information.Check_out = json.User_information.Check_in.Add(6 * 30 * 24 * time.Hour) // เดือน * วัน * ชั่วโมง
+	json.User_information.Check_out = json.User_information.Check_in.Add(3 * 30 * 24 * time.Hour) // เดือน * วัน * ชั่วโมง
 	userInformation := model.User_information{
 		Number_Room:  json.User_information.Number_Room,
 		Deposit:      json.User_information.Deposit,
@@ -109,7 +109,9 @@ func UpdateInfo(c *gin.Context) {
 	}
 
 	var userINFO model.User_information
+	userINFO.Number_Room = RoomInfo.User_information.Number_Room //เข้า
 	database.Db.Where("number_room = ?", userINFO.Number_Room).First(&userINFO)
+	// fmt.Println("Debug: Number_Room =", RoomInfo.User_information.Number_Room)
 	if userINFO.ID > 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "NumberRoom Exist"})
 		return
@@ -152,7 +154,7 @@ func PostLogin(c *gin.Context) {
 		// Sign and get the complete encoded token as a string using the secret
 		tokenString, err := token.SignedString(hmacSampleSecret)
 		fmt.Println(tokenString, err)
-		c.JSON(http.StatusOK, gin.H{"status": "OK", "message": "Login Success", "Token": tokenString})
+		c.JSON(http.StatusOK, gin.H{"status": "OK", "message": "Login Success", "Token": tokenString, "Pass": json.PassWord})
 	} else {
 		// 400 login ไม่ถูกต้อง
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Login Failed"})
