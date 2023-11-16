@@ -28,6 +28,11 @@ func main() {
 	authorized.GET("/GetAll_UserRegister", registercontorller.Get_All_UserRegister)
 	authorized.GET("/Get_profile", registercontorller.Profile)
 	r.Run("localhost:8080") // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+
+	//All
+	//admin
+	//CEO
+	//User
 }
 
 /*

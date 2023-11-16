@@ -96,35 +96,41 @@ func PostRegister(c *gin.Context) {
 }
 
 func UpdateInfo(c *gin.Context) {
-	var RoomInfo model.User_Register
-	id := c.Param("id")
-	if err := database.Db.First(&RoomInfo, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"message": "Product not found"})
+	var userRegister model.User_Register
+	id := c.Param("id") // gorm.ID
+	// โหลดตาราง User_information ค้นหา ID
+	if err := database.Db.Preload("User_information").First(&userRegister, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"message": "User not found"})
 		return
 	}
 
-	if err := c.ShouldBindJSON(&RoomInfo); err != nil {
+	if err := c.ShouldBindJSON(&userRegister); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request data"})
 		return
 	}
 
-	var userINFO model.User_information
-	userINFO.Number_Room = RoomInfo.User_information.Number_Room //เข้า
-	database.Db.Where("number_room = ?", userINFO.Number_Room).First(&userINFO)
-	// fmt.Println("Debug: Number_Room =", RoomInfo.User_information.Number_Room)
-	if userINFO.ID > 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "NumberRoom Exist"})
+	// var userINFO model.User_information
+	// userINFO.Number_Room = userRegister.User_information.Number_Room //เข้า
+	// database.Db.Where("number_room = ?", userINFO.Number_Room).First(&userINFO)
+	// // fmt.Println("Debug: Number_Room =", RoomInfo.User_information.Number_Room)
+	// if userINFO.ID > 0 {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "NumberRoom Exist"})
+	// 	return
+	// }
+
+	// อัปเดต User_Register
+	if err := database.Db.Save(&userRegister).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to update user"})
 		return
 	}
 
-	if err := database.Db.Save(&RoomInfo).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to update product"})
+	// อัปเดต User_information
+	if err := database.Db.Save(&userRegister.User_information).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to update user information"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"Status":     "Ok",
-		"UpdateInfo": RoomInfo})
+	c.JSON(http.StatusOK, gin.H{"Status": "Ok", "UpdateInfo": userRegister})
 }
 
 // Login
